@@ -34,20 +34,21 @@
     }
     else {
         [self.audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error: nil];
+        [self.audioSession setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionAllowBluetooth error: nil];
     }
-    
+
     NSError* audioSessionError = nil;
-    
+
     // Activate the audio session
     [self.audioSession setActive:YES withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:&audioSessionError];
-    
+
     if (audioSessionError != nil) {
         [self sendResult:@{@"code": @"audio", @"message": [audioSessionError localizedDescription]} :nil :nil :nil];
         return NO;
     }
 
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(teardown) name:RCTBridgeWillReloadNotification object:nil];
-    
+
     return YES;
 }
 
@@ -76,24 +77,24 @@
     self.isTearingDown = YES;
     [self.recognitionTask cancel];
     self.recognitionTask = nil;
-    
+
     // Set back audio session category
     [self resetAudioSession];
-    
+
     // End recognition request
     [self.recognitionRequest endAudio];
-    
+
     // Remove tap on bus
     [self.audioEngine.inputNode removeTapOnBus:0];
     [self.audioEngine.inputNode reset];
-    
+
     // Stop audio engine and dereference it for re-allocation
     if (self.audioEngine.isRunning) {
         [self.audioEngine stop];
         [self.audioEngine reset];
         self.audioEngine = nil;
     }
-    
+
     self.recognitionRequest = nil;
     self.sessionId = nil;
     self.isTearingDown = NO;
@@ -113,6 +114,7 @@
         [self.audioSession setCategory:self.priorAudioCategory withOptions:AVAudioSessionCategoryOptionAllowBluetooth error: nil];
     } else {
         [self.audioSession setCategory:self.priorAudioCategory withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error: nil];
+        [self.audioSession setCategory:self.priorAudioCategory withOptions:AVAudioSessionCategoryOptionAllowBluetooth error: nil];
     }
     // Remove pointer reference
     self.audioSession = nil;
@@ -123,52 +125,52 @@
     self.priorAudioCategory = [self.audioSession category];
     // Tear down resources before starting speech recognition..
     [self teardown];
-    
+
     self.sessionId = [[NSUUID UUID] UUIDString];
-    
+
     NSLocale* locale = nil;
     if ([localeStr length] > 0) {
         locale = [NSLocale localeWithLocaleIdentifier:localeStr];
     }
-    
+
     if (locale) {
         self.speechRecognizer = [[SFSpeechRecognizer alloc] initWithLocale:locale];
     } else {
         self.speechRecognizer = [[SFSpeechRecognizer alloc] init];
     }
-    
+
     self.speechRecognizer.delegate = self;
-    
+
     // Start audio session...
     if (![self setupAudioSession]) {
         [self teardown];
         return;
     }
-    
+
     self.recognitionRequest = [[SFSpeechAudioBufferRecognitionRequest alloc] init];
     // Configure request so that results are returned before audio recording is finished
     self.recognitionRequest.shouldReportPartialResults = YES;
-    
+
     if (self.recognitionRequest == nil) {
         [self sendResult:@{@"code": @"recognition_init"} :nil :nil :nil];
         [self teardown];
         return;
     }
-    
+
     if (self.audioEngine == nil) {
         self.audioEngine = [[AVAudioEngine alloc] init];
     }
-    
+
     AVAudioInputNode* inputNode = self.audioEngine.inputNode;
     if (inputNode == nil) {
         [self sendResult:@{@"code": @"input"} :nil :nil :nil];
         [self teardown];
         return;
     }
-    
+
     [self sendEventWithName:@"onSpeechStart" body:nil];
-    
-    
+
+
     // A recognition task represents a speech recognition session.
     // We keep a reference to the task so that it can be cancelled.
     NSString *taskSessionId = self.sessionId;
@@ -184,23 +186,23 @@
             [self teardown];
             return;
         }
-        
+
         // No result.
         if (result == nil) {
             [self sendEventWithName:@"onSpeechEnd" body:nil];
             [self teardown];
             return;
         }
-        
+
         BOOL isFinal = result.isFinal;
-        
+
         NSMutableArray* transcriptionDics = [NSMutableArray new];
         for (SFTranscription* transcription in result.transcriptions) {
             [transcriptionDics addObject:transcription.formattedString];
         }
-        
+
         [self sendResult :nil :result.bestTranscription.formattedString :transcriptionDics :[NSNumber numberWithBool:isFinal]];
-        
+
         if (isFinal || self.recognitionTask.isCancelled || self.recognitionTask.isFinishing) {
             [self sendEventWithName:@"onSpeechEnd" body:nil];
             if (!self.continuous) {
@@ -208,13 +210,13 @@
             }
             return;
         }
-        
+
     }];
-    
+
     AVAudioFormat* recordingFormat = [inputNode outputFormatForBus:0];
     AVAudioMixerNode *mixer = [[AVAudioMixerNode alloc] init];
     [self.audioEngine attachNode:mixer];
-    
+
     // Start recording and append recording buffer to speech recognizer
     @try {
         [mixer installTapOnBus:0 bufferSize:1024 format:recordingFormat block:^(AVAudioPCMBuffer * _Nonnull buffer, AVAudioTime * _Nonnull when) {
@@ -229,7 +231,7 @@
         [self teardown];
         return;
     } @finally {}
-    
+
     [self.audioEngine connect:inputNode to:mixer format:recordingFormat];
     [self.audioEngine prepare];
     NSError* audioSessionError = nil;
