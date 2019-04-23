@@ -11,7 +11,7 @@
     "react-native-elements": "^1.1.0",
     "react-native-sound": "^0.10.12",
     "react-native-vector-icons": "^6.4.2",
-    "react-native-voice": "https://github.com/wenkesj/react-native-voice/tarball/master"
+    "react-native-voice": "https://github.com/tuhins/react-native-voice/tarball/master"
   },
   "devDependencies": {
     "babel-jest": "23.6.0",
