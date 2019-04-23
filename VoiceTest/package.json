@@ -2,15 +2,23 @@
   "name": "VoiceTest",
   "version": "0.0.1",
   "dependencies": {
+    "@react-native-community/async-storage": "^1.3.3",
+    "moment": "^2.24.0",
     "react": "16.6.0-alpha.8af6728",
     "react-native": "0.57.4",
-    "react-native-voice": "^0.2.6"
+    "react-native-audio": "^4.3.0",
+    "react-native-audio-record": "^0.2.0",
+    "react-native-elements": "^1.1.0",
+    "react-native-sound": "^0.10.12",
+    "react-native-vector-icons": "^6.4.2",
+    "react-native-voice": "https://github.com/wenkesj/react-native-voice/tarball/master"
   },
   "devDependencies": {
     "babel-jest": "23.6.0",
     "jest": "23.6.0",
     "metro-react-native-babel-preset": "0.49.0",
-    "react-test-renderer": "16.6.0-alpha.8af6728"
+    "react-test-renderer": "16.6.0-alpha.8af6728",
+    "uuid": "^3.3.2"
   },
   "jest": {
     "preset": "react-native"
